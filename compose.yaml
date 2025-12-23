@@ -1,0 +1,22 @@
+services:
+  benchmark_leakage:
+    image: ghcr.io/jemin7709/benchmark_leakage
+    build: .
+    ipc: host
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+      PYTHONPATH: /workspace
+    volumes:
+      - cache:/root/.cache
+    command: sleep infinity
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /workspace
+          ignore:
+            - .venv
+
+volumes:
+  cache:
+    external: true
