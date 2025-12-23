@@ -11,6 +11,7 @@ from transformers import (
     Qwen3OmniMoeThinkerForConditionalGeneration,
 )
 from vllm import LLM, SamplingParams
+from vllm.reasoning.qwen3_reasoning_parser import Qwen3ReasoningParser
 
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -96,10 +97,11 @@ class Qwen3Omni_VLLM:
             model=model_name,
             tensor_parallel_size=torch.cuda.device_count(),
             seed=0,
-            max_model_len=65536 // 4,
+            max_model_len=65536,
         )
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.system_prompt = ""
+        self.reasoning_parser = Qwen3ReasoningParser(self.processor.tokenizer)
 
     def inference(self, prompts: list[str], audio_paths: list[object]):
         sampling_params = SamplingParams(
@@ -143,7 +145,10 @@ class Qwen3Omni_VLLM:
 
         outputs = self.model.generate(inputs, sampling_params=sampling_params)
 
-        return [output.outputs[0].text for output in outputs]
+        return [
+            self.reasoning_parser.extract_reasoning(output.outputs[0].text, None)[1]
+            for output in outputs
+        ]
 
 
 if __name__ == "__main__":
