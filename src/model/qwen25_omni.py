@@ -27,7 +27,7 @@ class Qwen2_5Omni_HF:
         ).eval()
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.tokenizer = self.processor.tokenizer
-        self.system_prompt = "You are Qwen, a virtual human developed by the Qwen Team, Alibaba Group, capable of perceiving auditory and visual inputs, as well as generating text and speech."
+        self.system_prompt = ""
 
     def inference(self, prompts: list[str], audio_paths: list[str]) -> list[str]:
         messages = [
@@ -97,12 +97,11 @@ class Qwen2_5Omni_VLLM:
             seed=0,
         )
         self.processor = AutoProcessor.from_pretrained(model_name)
-        self.system_prompt = "You are Qwen, a virtual human developed by the Qwen Team, Alibaba Group, capable of perceiving auditory and visual inputs, as well as generating text and speech."
+        self.system_prompt = ""
 
     def inference(self, prompts: list[str], audio_paths: list[object]):
         sampling_params = SamplingParams(
-            max_tokens=4096,
-            temperature=0.0,
+            max_tokens=4096, temperature=0.0, truncate_prompt_tokens=-1
         )
 
         messages = [
