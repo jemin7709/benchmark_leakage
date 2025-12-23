@@ -13,6 +13,7 @@ dependencies = [
     "pandas>=2.3.3",
     "pyarrow>=22.0.0",
     "qwen-omni-utils>=0.0.8",
+    "sacrebleu>=2.5.1",
     "timm>=1.0.22",
     "transformers>=4.57.3",
     "vllm>=0.13.0",
