@@ -258,3 +258,4 @@ __marimo__/
 *.vsix
 
 compose.override.yaml
+results/
