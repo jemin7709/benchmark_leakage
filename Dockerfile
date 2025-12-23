@@ -13,8 +13,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /workspace
 
-COPY pyproject.toml uv.lock .python-version ./
+COPY pyproject.toml uv.lock .python-version requirements-eval.txt ./
 RUN uv sync --frozen
+RUN uv venv .venv-eval && \
+    uv pip install --python .venv-eval/bin/python -r requirements-eval.txt
 
 COPY . .
 
