@@ -1,7 +1,11 @@
+import os
+
+os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
 import warnings
 
 import torch
 from transformers import AutoProcessor, Gemma3nForConditionalGeneration
+from vllm import LLM, SamplingParams
 
 warnings.filterwarnings("ignore")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -19,7 +23,7 @@ class Gemma3n_HF:
         self.model_name = model_name
         self.model = Gemma3nForConditionalGeneration.from_pretrained(
             model_name,
-            torch_dtype="auto",
+            dtype="auto",
             device_map="auto",
         ).eval()
         self.processor = AutoProcessor.from_pretrained(model_name)
@@ -70,7 +74,6 @@ class Gemma3n_HF:
                 do_sample=False,
                 disable_compile=True,
             )
-            print(self.processor.batch_decode(outputs, skip_special_tokens=False))
 
             text = self.processor.batch_decode(
                 outputs[:, input_len:],
@@ -82,16 +85,81 @@ class Gemma3n_HF:
         return responses
 
 
+class Gemma3n_VLLM:
+    """Gemma 3n multimodal model wrapper for vLLM.
+
+    Supports audio-to-text inference using vLLM engine.
+    """
+
+    def __init__(self, model_name: str = "google/gemma-3n-E4B-it"):
+        self.model_name = model_name
+        self.model = LLM(
+            model=model_name,
+            tensor_parallel_size=torch.cuda.device_count(),
+            seed=0,
+        )
+        self.processor = AutoProcessor.from_pretrained(model_name)
+        self.system_prompt = ""
+
+    def inference(self, prompts: list[str], audio_paths: list[object]) -> list[str]:
+        """Run inference on audio inputs.
+
+        Args:
+            prompts: List of text prompts.
+            audio_paths: List of audio inputs (file paths or numpy arrays).
+
+        Returns:
+            List of generated text responses.
+        """
+        sampling_params = SamplingParams(
+            max_tokens=4096, temperature=0.0, truncate_prompt_tokens=-1
+        )
+
+        messages_batch = [
+            [
+                {
+                    "role": "system",
+                    "content": [{"type": "text", "text": self.system_prompt}],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "audio", "audio": audio_path},
+                        {"type": "text", "text": prompt},
+                    ],
+                },
+            ]
+            for prompt, audio_path in zip(prompts, audio_paths)
+        ]
+
+        inputs_text = [
+            self.processor.apply_chat_template(
+                messages, add_generation_prompt=True, tokenize=False
+            )
+            for messages in messages_batch
+        ]
+
+        inputs = [
+            {
+                "prompt": text,
+                "multi_modal_data": {"audio": audio},
+            }
+            for text, audio in zip(inputs_text, audio_paths)
+        ]
+
+        outputs = self.model.generate(inputs, sampling_params=sampling_params)
+
+        return [output.outputs[0].text for output in outputs]
+
+
 if __name__ == "__main__":
-    import librosa
     from transformers import set_seed
+    from vllm.assets.audio import AudioAsset
 
     set_seed(0)
 
-    # Load sample audio (16kHz mono expected)
-    audio, sr = librosa.load(librosa.example("trumpet"), sr=16000)
-
-    model = Gemma3n_HF()
+    audio = AudioAsset("mary_had_lamb").audio_and_sample_rate[0]
+    model = Gemma3n_VLLM()
     responses = model.inference(
         ["Describe this audio."] * 2,
         [audio] * 2,
