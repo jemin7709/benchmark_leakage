@@ -140,7 +140,7 @@ if __name__ == "__main__":
             df.at[i + idx, "bleu_score"] = bleu_score
 
         os.makedirs("./results", exist_ok=True)
-        df.to_parquet(
+        df.to_csv(
             os.path.join(
                 "./results",
                 f"{model_name.replace('.', '')}_pred_half_{'noise' if use_noise else 'audio'}.csv",
