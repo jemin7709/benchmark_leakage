@@ -5,7 +5,7 @@ RUN sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirror.kakao.com/ubuntu|g'
     sed -i 's|http://security.ubuntu.com/ubuntu|http://mirror.kakao.com/ubuntu|g' /etc/apt/sources.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    ca-certificates curl wget git \
+    ca-certificates curl wget git vim \
     libnvtoolsext1 cuda-nvtx-12-9 && \
     rm -rf /var/lib/apt/lists/* && apt-get clean
 
