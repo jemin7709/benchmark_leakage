@@ -23,12 +23,8 @@ def load_data() -> tuple[pd.DataFrame, str]:
     return pd.read_parquet(parquet_dirs[0]), os.path.dirname(parquet_dirs[0])
 
 
-def make_prompt(
-    category: str, question: str, choices: list[str], transcription: str
-) -> str:
+def make_prompt(category: str, question: str, choices: list[str]) -> str:
     prompt = []
-    if category.lower() == "instruction following":
-        prompt.append("Audio Transcript: " + transcription + "\n")
     prompt.append("Question: " + question + "\n")
     if category.lower() != "open" and category.lower() != "instruction following":
         prompt.append("Options:\n")
@@ -86,9 +82,7 @@ if __name__ == "__main__":
         # 2. 배치 내 데이터 준비
         for _, row in batch_df.iterrows():
             # 프롬프트 생성
-            full_prompt = make_prompt(
-                row["category"], row["question"], row["choices"], row["transcription"]
-            )
+            full_prompt = make_prompt(row["category"], row["question"], row["choices"])
 
             # 프롬프트를 단어 단위로 절반으로 자르기
             words = full_prompt.split()

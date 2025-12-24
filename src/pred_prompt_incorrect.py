@@ -28,14 +28,10 @@ def make_prompt(
     category: str,
     question: str,
     choices: list[str],
-    transcription: str,
-    answer: str,
     masked_idx: int,
 ) -> tuple[str, str]:
     """프롬프트 생성 및 마스킹된 옵션 반환"""
     prompt = []
-    if category.lower() == "instruction following":
-        prompt.append("Audio Transcript: " + transcription + "\n")
     prompt.append("Question: " + question + "\n")
 
     masked_choice = ""
@@ -127,8 +123,6 @@ if __name__ == "__main__":
                 row["category"],
                 row["question"],
                 row["choices"],
-                row["transcription"],
-                row["answer"],
                 masked_idx,
             )
 
