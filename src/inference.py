@@ -102,15 +102,22 @@ if __name__ == "__main__":
 
         # (선택) 중간 결과 출력
         for idx, res in enumerate(batch_responses):
-            print(f"Sample {i + idx}: \n{prompts[idx]}\n\n{res}")
+            print(f"Sample {i + idx}:\n{prompts[idx]}")
             print("-" * 50)
+            print(f"Output:\n{res}")
+            print("=" * 50)
             df.at[i + idx, "model_response"] = res
 
+        suffix = (
+            noise_path.replace(".", "").replace("/", "-").replace("mp3", "")[1:]
+            if noise_path != ""
+            else "audio"
+        )
         os.makedirs("./results", exist_ok=True)
         df.to_parquet(
             os.path.join(
                 "./results",
-                f"{model_name.replace('.', '')}_predictions_{noise_path.replace('.', '').replace('/', '-') if noise_path != '' else 'audio'}.parquet",
+                f"{model_name.replace('.', '')}_predictions_{suffix}.parquet",
             )
         )
     print(f"Total processed: {len(all_responses)}")
