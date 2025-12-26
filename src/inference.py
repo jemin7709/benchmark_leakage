@@ -23,7 +23,13 @@ def load_data() -> tuple[pd.DataFrame, str]:
 
 
 def make_prompt(category: str, question: str, choices: list[str]) -> str:
-    prompt = []
+    mcq_prompt = "Answer the following multiple choice question. The last line of your response should be in the following format: `Answer: <OPTION> where <OPTION> is copied verbatim from the options.`\n\n"
+    open_prompt = "Answer the following question.\n\n"
+    prompt = [
+        mcq_prompt
+        if category.lower() != "open" and category.lower() != "instruction following"
+        else open_prompt
+    ]
     prompt.append("Question: " + question + "\n")
     if category.lower() != "open" and category.lower() != "instruction following":
         prompt.append("Options:\n")
@@ -43,9 +49,10 @@ if __name__ == "__main__":
         help="Model to use for inference",
     )
     parser.add_argument(
-        "--use-noise",
-        action="store_true",
-        help="Use white noise audio instead of actual audio files",
+        "--noise-path",
+        type=str,
+        default="",
+        help="Path to the white noise audio file",
     )
     parser.add_argument(
         "--batch-size", type=int, default=1, help="Batch size for inference"
@@ -55,7 +62,7 @@ if __name__ == "__main__":
 
     batch_size: int = args.batch_size
     model_name = args.model
-    use_noise = args.use_noise
+    noise_path = args.noise_path
 
     df, data_dir = load_data()
     if model_name == "gemma3n":
@@ -80,10 +87,10 @@ if __name__ == "__main__":
             prompt = make_prompt(row["category"], row["question"], row["choices"])
             prompts.append(prompt)
 
-            if not use_noise:
+            if noise_path == "":
                 audio_path = os.path.join(data_dir, row["audio_path"][0])
             else:
-                audio_path = os.path.join("./assets", "white-noise.mp3")
+                audio_path = noise_path
             audios.append(librosa.load(audio_path, sr=None)[0])
 
         # 3. 배치 추론 실행
@@ -102,7 +109,8 @@ if __name__ == "__main__":
         os.makedirs("./results", exist_ok=True)
         df.to_parquet(
             os.path.join(
-                "./results", f"{model_name.replace('.', '')}_predictions_{"noise" if use_noise else "audio"}.parquet"
+                "./results",
+                f"{model_name.replace('.', '')}_predictions_{'noise' if noise_path != '' else 'audio'}.parquet",
             )
         )
     print(f"Total processed: {len(all_responses)}")
