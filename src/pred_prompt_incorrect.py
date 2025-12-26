@@ -84,8 +84,10 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
-    # open 카테고리 필터링
-    df = df[df["category"].str.lower() != "open"].reset_index(drop=True)
+    # open 및 instruction following 카테고리 필터링 (객관식이 아님)
+    df = df[
+        ~df["category"].str.lower().isin(["open", "instruction following"])
+    ].reset_index(drop=True)
 
     all_responses = []
     bleu_metric = BLEU()
