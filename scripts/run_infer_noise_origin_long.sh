@@ -12,7 +12,7 @@ run_cmd() {
     
     echo "→ $label"
     if "$@" 2>&1 | tee "$tmp_output"; then
-        echo "[✓] $label"
+        echo "[✓] $label" | tee -a "$LOG_FILE"
     else
         local exit_code=$?
         echo "[✗] $label (Exit Code: $exit_code)" | tee -a "$LOG_FILE"
