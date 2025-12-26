@@ -27,7 +27,7 @@ run_cmd() {
 
 run_cmd "Qwen2.5-Omni with noise" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/inference.py --model qwen2.5-omni --noise-path ./assets/white-noise-358382.mp3 --batch-size 100"
 run_cmd "Qwen3-Omni with noise" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/inference.py --model qwen3-omni --noise-path ./assets/white-noise-358382.mp3 --batch-size 100"
-run_cmd "Gemma3n with noise" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/inference.py --model gemma3n --noise-path ./assets/white-noise-358382.mp3 --batch-size 1"
+run_cmd "Gemma3n with noise" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/inference.py --model gemma3n --noise-path ./assets/white-noise-358382.mp3 --batch-size 100"
 
 echo
 echo "Log saved to: $LOG_FILE"
