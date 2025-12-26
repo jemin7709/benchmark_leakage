@@ -110,7 +110,7 @@ if __name__ == "__main__":
         df.to_parquet(
             os.path.join(
                 "./results",
-                f"{model_name.replace('.', '')}_predictions_{'noise' if noise_path != '' else 'audio'}.parquet",
+                f"{model_name.replace('.', '')}_predictions_{noise_path.replace('.', '').replace('/', '-') if noise_path != '' else 'audio'}.parquet",
             )
         )
     print(f"Total processed: {len(all_responses)}")
