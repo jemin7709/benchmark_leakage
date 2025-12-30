@@ -25,9 +25,9 @@ run_cmd() {
     trap - EXIT INT TERM
 }
 
-run_cmd "Eval Gemma3n audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/gemma3n_predictions_audio.parquet --model_output_column model_response"
-run_cmd "Eval Qwen2.5-Omni audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/qwen25-omni_predictions_audio.parquet --model_output_column model_response"s
-run_cmd "Eval Qwen3-Omni audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/qwen3-omni_predictions_audio.parquet --model_output_column model_response"
+run_cmd "Eval Gemma3n audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/gemma3n_predictions_audio.parquet --model_output_column model_response"
+run_cmd "Eval Qwen2.5-Omni audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/qwen25-omni_predictions_audio.parquet --model_output_column model_response"
+run_cmd "Eval Qwen3-Omni audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/qwen3-omni_predictions_audio.parquet --model_output_column model_response"
 
 echo
 echo "Log saved to: $LOG_FILE"

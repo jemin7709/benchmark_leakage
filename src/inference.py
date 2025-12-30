@@ -39,6 +39,7 @@ def make_prompt(category: str, question: str, choices: list[str]) -> str:
         prompt.append("\n".join(choices_list))
     return "".join(prompt)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -113,10 +114,10 @@ if __name__ == "__main__":
             if noise_path != ""
             else "audio"
         )
-        os.makedirs("./results", exist_ok=True)
+        os.makedirs("./results/mmau-pro", exist_ok=True)
         df.to_parquet(
             os.path.join(
-                "./results",
+                "./results/mmau-pro",
                 f"{model_name.replace('.', '')}_predictions_{suffix}.parquet",
             )
         )
