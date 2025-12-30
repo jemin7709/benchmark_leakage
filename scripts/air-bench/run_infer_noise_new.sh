@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="logs/execution_infer_air-bench.log"
+LOG_FILE="logs/execution_infer_noise_new_air-bench.log"
 > "$LOG_FILE"  # Clear log file
 
 run_cmd() {
@@ -25,9 +25,9 @@ run_cmd() {
     trap - EXIT INT TERM
 }
 
-run_cmd "Qwen2.5-Omni with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen2.5-omni --batch-size 100"
-run_cmd "Qwen3-Omni with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni --batch-size 100"
-run_cmd "Gemma3n with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model gemma3n --batch-size 1"
+run_cmd "Qwen2.5-Omni with noise" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen2.5-omni --noise-path ./assets/white-noise-179828-10s.mp3 --batch-size 100"
+run_cmd "Qwen3-Omni with noise" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni --noise-path ./assets/white-noise-179828-10s.mp3 --batch-size 100"
+run_cmd "Gemma3n with noise" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model gemma3n --noise-path ./assets/white-noise-179828-10s.mp3 --batch-size 100"
 
 echo
 echo "Log saved to: $LOG_FILE"

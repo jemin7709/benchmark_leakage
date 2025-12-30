@@ -93,10 +93,16 @@ def main() -> None:
         "--batch-size", type=int, default=1, help="Batch size for inference"
     )
     parser.add_argument(
+        "--noise-path",
+        type=str,
+        default="",
+        help="Path to the white noise audio file",
+    )
+    parser.add_argument(
         "--output",
         type=str,
         default="",
-        help="Output jsonl path (defaults to ./results/air-bench/{model}_predictions_foundation.jsonl)",
+        help="Output jsonl path (defaults to ./results/air-bench/{model}_predictions_foundation_{suffix}.jsonl)",
     )
 
     parser.add_argument(
@@ -114,13 +120,19 @@ def main() -> None:
         meta = meta[: args.limit]
 
     model_name: str = args.model
+    noise_path: str = args.noise_path
     model = _build_model(model_name)
 
+    suffix = (
+        noise_path.replace(".", "").replace("/", "-").replace("mp3", "")[1:]
+        if noise_path != ""
+        else "audio"
+    )
     output_path = (
         Path(args.output)
         if args.output
         else Path("./results/air-bench")
-        / f"{model_name.replace('.', '')}_predictions_foundation.jsonl"
+        / f"{model_name.replace('.', '')}_predictions_foundation_{suffix}.jsonl"
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -146,8 +158,12 @@ def main() -> None:
                 idx = start + offset
                 indices.append(idx)
 
-                local_audio_path, _ = _download_audio_if_needed(item)
-                audio = librosa.load(str(local_audio_path), sr=None)[0]
+                if noise_path:
+                    audio = librosa.load(noise_path, sr=None)[0]
+                    local_audio_path = Path(noise_path)
+                else:
+                    local_audio_path, _ = _download_audio_if_needed(item)
+                    audio = librosa.load(str(local_audio_path), sr=None)[0]
 
                 prompt = _build_prompt(
                     question=item["question"],
