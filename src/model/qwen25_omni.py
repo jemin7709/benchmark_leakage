@@ -29,7 +29,7 @@ class Qwen2_5Omni_HF:
         self.tokenizer = self.processor.tokenizer
         self.system_prompt = ""
 
-    def inference(self, prompts: list[str], audio_paths: list[str]) -> list[str]:
+    def inference(self, prompts: list[str], audio_paths: list[object]) -> list[str]:
         messages = [
             [
                 {
