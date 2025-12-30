@@ -31,8 +31,6 @@ benchmark_leakage/
 | Run MMAU-Pro inference (audio/noise) | `scripts/run_infer*.sh`, `src/inference.py` | `--noise-path` swaps all audio to one file |
 | Run MMAU-Pro evaluation | `scripts/run_eval*.sh`, `src/evaluation.py` | Uses `.venv-eval/bin/python` |
 | Change model backends | `src/model/*.py` | HF + vLLM wrappers per model |
-| AIR-Bench 2024 inference | `src/air-bench/inference_foundation.py` | Writes JSONL, supports `--backend` |
-| AIR-Bench scoring | `src/air-bench/score_foundation.py` | Extracts A/B/C/D from responses |
 
 ## CONVENTIONS
 
@@ -41,7 +39,6 @@ benchmark_leakage/
 - **Results**: written under `./results/` (gitignored).
 - **Dataset IO**:
   - MMAU-Pro inference reads HF cache directly at `~/.cache/huggingface/hub/.../test.parquet`.
-  - AIR-Bench uses `datasets.load_dataset()` pinned by `DATASET_REVISION`.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
