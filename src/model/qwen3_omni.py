@@ -146,7 +146,9 @@ class Qwen3Omni_VLLM:
         outputs = self.model.generate(inputs, sampling_params=sampling_params)
 
         return [
-            self.reasoning_parser.extract_reasoning(output.outputs[0].text, None)[1]
+            self.reasoning_parser.extract_reasoning(output.outputs[0].text, None)[
+                1
+            ].strip()
             for output in outputs
         ]
 
