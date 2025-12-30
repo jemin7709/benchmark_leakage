@@ -7,26 +7,23 @@ CATEGORY_LABELS: tuple[tuple[str, str], ...] = (
     ("Speech_Grounding", "Speech grounding"),
     ("Spoken_Language_Identification", "Spoken language identification"),
     ("Speaker_Gender_Recognition", "Speaker gender recognition"),
-    ("Emotion_Recognition", "Emotion recognition"),
+    ("Speaker_Emotion_Recontion", "Emotion recognition"),
     ("Speaker_Age_Prediction", "Speaker age prediction"),
-    ("Speech_Entity_Recognition", "Speech entity recognition"),
-    ("Intent_Classification", "Intent classification"),
+    ("Speech_Entity_Reconition", "Speech entity recognition"),
+    ("Speaker_Intent_Classification", "Intent classification"),
     ("Speaker_Number_Verification", "Speaker number verification"),
     ("Synthesized_Voice_Detection", "Synthesized voice detection"),
     ("Audio_Grounding", "Audio grounding"),
-    ("Vocal_Sound_Classification", "Vocal sound classification"),
+    ("vocal_sound_classification", "Vocal sound classification"),
     ("Acoustic_Scene_Classification", "Acoustic scene classification"),
-    ("Sound_Question_Answering", "Sound question answering"),
-    ("Music_Instruments_Classification", "Music instruments classification"),
-    ("Music_Genre_Classification", "Music genre classification"),
-    ("Music_Note_Analysis_Pitch", "Music note analysis-pitch"),
-    ("Music_Note_Analysis_Velocity", "Music note analysis-velocity"),
-    ("Music_Question_Answering", "Music question answering"),
-    ("Music_Emotion_Detection", "Music emotion detection"),
+    ("Sound_AQA", "Sound question answering"),
+    ("Music_Instruments_Classfication", "Music instruments classification"),
+    ("Music_Genre_Recognition", "Music genre classification"),
+    ("Music_Midi_Pitch_Analysis", "Music note analysis-pitch"),
+    ("Music_Midi_Velocity_Analysis", "Music note analysis-velocity"),
+    ("Music_AQA", "Music question answering"),
+    ("Music_Mood_Recognition", "Music emotion detection"),
 )
-
-CATEGORY_LABEL_LOOKUP = {task_name: label for task_name, label in CATEGORY_LABELS}
-
 
 def _parse_prediction_letter(response: object) -> str | None:
     if response is None:
@@ -172,6 +169,8 @@ def main() -> None:
     )
 
     print("-" * 100)
+    print(f"Total sum: {total_sum}")
+    print(f"Total correct: {total_correct}")
     print(f"fail_num: {fail_num}")
     print(f"category_average: {category_average:.2f}%")
 
