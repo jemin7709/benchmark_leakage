@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import librosa
-from huggingface_hub import hf_hub_download
+from huggingface_hub import snapshot_download
 from transformers import set_seed
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
@@ -23,61 +23,28 @@ PROMPT_INSTRUCTION = (
     "you may only choose A or B or C or D."
 )
 
-
-def _load_meta() -> list[dict]:
-    meta_path = hf_hub_download(
-        repo_id=HF_DATASET_REPO,
-        repo_type="dataset",
-        filename=f"{HF_FOUNDATION_DIR}/Foundation_meta.json",
-    )
-    with Path(meta_path).open("r", encoding="utf-8") as f:
-        return json.load(f)
+MODEL_CLASSES = {
+    "gemma3n": Gemma3n_VLLM,
+    "qwen3-omni": Qwen3Omni_VLLM,
+    "qwen2.5-omni": Qwen2_5Omni_VLLM,
+}
 
 
-def _build_prompt(
-    question: str, choice_a: str, choice_b: str, choice_c: object, choice_d: object
-) -> str:
-    choices = f"A. {choice_a}\nB. {choice_b}\nC. {choice_c}\nD. {choice_d}"
-    return PROMPT_INSTRUCTION + "\n" + question + "\n" + choices
-
-
-def _candidate_audio_paths(item: dict) -> list[str]:
-    path = item["path"]
-    if item.get("task_name") == "Audio_Grounding" and path.endswith(".wav"):
-        return [path, path[:-3] + "flac"]
-    return [path]
-
-
-def _download_audio_if_needed(item: dict) -> tuple[Path, str]:
+def _get_audio_path(dataset_dir: Path, item: dict) -> Path:
     task_name = item["task_name"]
     dataset_name = item["dataset_name"]
+    path = item["path"]
 
-    last_error: Exception | None = None
-    for rel_path in _candidate_audio_paths(item):
-        try:
-            local_path = hf_hub_download(
-                repo_id=HF_DATASET_REPO,
-                repo_type="dataset",
-                filename=f"{HF_FOUNDATION_DIR}/{task_name}_{dataset_name}/{rel_path}",
-            )
-            return Path(local_path), rel_path
-        except Exception as e:  # noqa: BLE001
-            last_error = e
-            continue
+    audio_path = dataset_dir / f"{task_name}_{dataset_name}" / path
+    if audio_path.exists():
+        return audio_path
 
-    raise RuntimeError(
-        f"Failed to download audio for task={task_name} dataset={dataset_name} path={item['path']}: {last_error}"
-    )
+    if task_name == "Audio_Grounding" and path.endswith(".wav"):
+        flac_path = dataset_dir / f"{task_name}_{dataset_name}" / (path[:-3] + "flac")
+        if flac_path.exists():
+            return flac_path
 
-
-def _build_model(model_name: str):
-    if model_name == "gemma3n":
-        return Gemma3n_VLLM()
-    if model_name == "qwen3-omni":
-        return Qwen3Omni_VLLM()
-    if model_name == "qwen2.5-omni":
-        return Qwen2_5Omni_VLLM()
-    raise ValueError(f"Unknown model: {model_name}")
+    raise FileNotFoundError(f"Audio not found: {audio_path}")
 
 
 def main() -> None:
@@ -87,45 +54,45 @@ def main() -> None:
         type=str,
         default="gemma3n",
         choices=["gemma3n", "qwen3-omni", "qwen2.5-omni"],
-        help="Model to use for inference",
     )
-    parser.add_argument(
-        "--batch-size", type=int, default=1, help="Batch size for inference"
-    )
-    parser.add_argument(
-        "--noise-path",
-        type=str,
-        default="",
-        help="Path to the white noise audio file",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="",
-        help="Output jsonl path (defaults to ./results/air-bench/{model}_predictions_foundation_{suffix}.jsonl)",
-    )
-
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=0,
-        help="If set, only process first N samples (debugging)",
-    )
+    parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--noise-path", type=str, default="")
+    parser.add_argument("--output", type=str, default="")
+    parser.add_argument("--limit", type=int, default=0)
     args = parser.parse_args()
 
     set_seed(0)
 
-    meta = _load_meta()
-    if args.limit and args.limit > 0:
+    print("=" * 100)
+    print("Loading AIR-Bench Foundation dataset...")
+    dataset_dir = (
+        Path(
+            snapshot_download(
+                repo_id=HF_DATASET_REPO,
+                repo_type="dataset",
+                allow_patterns=[f"{HF_FOUNDATION_DIR}/*"],
+                max_workers=5,
+                resume_download=True,
+            )
+        )
+        / HF_FOUNDATION_DIR
+    )
+    print(f"Dataset directory: {dataset_dir}")
+    print("=" * 100)
+
+    with (dataset_dir / "Foundation_meta.json").open("r", encoding="utf-8") as f:
+        meta: list[dict] = json.load(f)
+
+    if args.limit > 0:
         meta = meta[: args.limit]
 
     model_name: str = args.model
     noise_path: str = args.noise_path
-    model = _build_model(model_name)
+    model = MODEL_CLASSES[model_name]()
 
     suffix = (
         noise_path.replace(".", "").replace("/", "-").replace("mp3", "")[1:]
-        if noise_path != ""
+        if noise_path
         else "audio"
     )
     output_path = (
@@ -159,23 +126,17 @@ def main() -> None:
                 indices.append(idx)
 
                 if noise_path:
-                    audio = librosa.load(noise_path, sr=None)[0]
-                    local_audio_path = Path(noise_path)
+                    audio_path = Path(noise_path)
                 else:
-                    local_audio_path, _ = _download_audio_if_needed(item)
-                    audio = librosa.load(str(local_audio_path), sr=None)[0]
+                    audio_path = _get_audio_path(dataset_dir, item)
+                audio = librosa.load(str(audio_path), sr=None)[0]
 
-                prompt = _build_prompt(
-                    question=item["question"],
-                    choice_a=item["choice_a"],
-                    choice_b=item["choice_b"],
-                    choice_c=item.get("choice_c", None),
-                    choice_d=item.get("choice_d", None),
-                )
+                choices = f"A. {item['choice_a']}\nB. {item['choice_b']}\nC. {item['choice_c']}\nD. {item['choice_d']}"
+                prompt = f"{PROMPT_INSTRUCTION}\n{item['question']}\n{choices}"
 
                 prompts.append(prompt)
                 audios.append(audio)
-                resolved_audio_paths.append(local_audio_path)
+                resolved_audio_paths.append(audio_path)
 
             print("=" * 100)
             print(
@@ -186,14 +147,14 @@ def main() -> None:
 
             batch_responses = model.inference(prompts, audios)
 
-            for idx, item, local_audio_path, prompt, response in zip(
+            for idx, item, audio_path, prompt, response in zip(
                 indices, batch_items, resolved_audio_paths, prompts, batch_responses
             ):
                 print("-" * 100)
                 print(
-                    f"[{idx}] task={item.get('task_name')} dataset={item.get('dataset_name')} uniq_id={item.get('uniq_id')}"
+                    f"[{idx}] task={item['task_name']} dataset={item['dataset_name']} uniq_id={item['uniq_id']}"
                 )
-                print(f"audio_path={local_audio_path}")
+                print(f"audio_path={audio_path}")
                 print("PROMPT:")
                 print(prompt)
                 print("-" * 100)
@@ -206,13 +167,13 @@ def main() -> None:
                     "question": item["question"],
                     "choice_a": item["choice_a"],
                     "choice_b": item["choice_b"],
-                    "choice_c": item.get("choice_c", None),
-                    "choice_d": item.get("choice_d", None),
-                    "answer_gt": item.get("answer_gt"),
-                    "task_name": item.get("task_name"),
-                    "dataset_name": item.get("dataset_name"),
+                    "choice_c": item["choice_c"],
+                    "choice_d": item["choice_d"],
+                    "answer_gt": item["answer_gt"],
+                    "task_name": item["task_name"],
+                    "dataset_name": item["dataset_name"],
                     "response": response,
-                    "uniq_id": item.get("uniq_id"),
+                    "uniq_id": item["uniq_id"],
                 }
                 fout.write(json.dumps(record, ensure_ascii=False) + "\n")
                 fout.flush()
