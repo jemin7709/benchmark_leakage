@@ -86,11 +86,11 @@ def main() -> None:
     args = parser.parse_args()
 
     input_path = Path(args.input)
-    output_path = (
-        Path(args.output)
-        if args.output
-        else input_path.with_name(f"{input_path.stem}_foundation_scores.json")
-    )
+    if args.output:
+        output_path = Path(args.output)
+    else:
+        output_stem = input_path.stem.replace("predictions", "evaluation", 1)
+        output_path = input_path.with_name(f"{output_stem}.json")
 
     fail_num = 0
     task_id_list: list[str] = []
