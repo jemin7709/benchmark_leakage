@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o pipefail
 
 LOG_FILE="logs/execution_infer_mmau-pro.log"
 > "$LOG_FILE"  # Clear log file

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o pipefail
 
 LOG_FILE="logs/execution_eval_noise_origin_mmau-pro.log"
 > "$LOG_FILE"  # Clear log file
