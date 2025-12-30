@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="execution_infer_noise_new.log"
+LOG_FILE="logs/execution_infer_noise_new_mmau-pro.log"
 > "$LOG_FILE"  # Clear log file
 
 run_cmd() {

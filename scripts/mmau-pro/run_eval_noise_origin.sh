@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="execution_eval_noise_origin.log"
+LOG_FILE="logs/execution_eval_noise_origin_mmau-pro.log"
 > "$LOG_FILE"  # Clear log file
 
 run_cmd() {
