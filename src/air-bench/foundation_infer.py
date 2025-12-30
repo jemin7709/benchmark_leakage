@@ -3,9 +3,11 @@ import json
 import os
 import sys
 import time
+from collections import defaultdict
 from pathlib import Path
 
 import librosa
+import numpy as np
 from huggingface_hub import snapshot_download
 from transformers import set_seed
 
@@ -59,6 +61,7 @@ def main() -> None:
     parser.add_argument("--noise-path", type=str, default="")
     parser.add_argument("--output", type=str, default="")
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--max-per-task", type=int, default=2000)
     args = parser.parse_args()
 
     set_seed(0)
@@ -85,6 +88,28 @@ def main() -> None:
 
     if args.limit > 0:
         meta = meta[: args.limit]
+
+    if args.max_per_task > 0:
+        task_to_instances: defaultdict[str, list[dict]] = defaultdict(list)
+        for item in meta:
+            task = item["task_name"]
+            task_to_instances[task].append(item)
+
+        sampled_meta = []
+        for instances in task_to_instances.values():
+            if len(instances) > args.max_per_task:
+                np.random.seed(0)
+                selected_indices = np.random.choice(
+                    len(instances),
+                    args.max_per_task,
+                    replace=False,
+                )
+                selected_instances = [instances[i] for i in selected_indices]
+            else:
+                selected_instances = instances
+            sampled_meta.extend(selected_instances)
+
+        meta = sampled_meta
 
     model_name: str = args.model
     noise_path: str = args.noise_path
