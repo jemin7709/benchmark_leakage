@@ -70,8 +70,8 @@ def main() -> None:
             snapshot_download(
                 repo_id=HF_DATASET_REPO,
                 repo_type="dataset",
-                allow_patterns=[f"{HF_FOUNDATION_DIR}/*"],
-                max_workers=5,
+                allow_patterns=[f"{HF_FOUNDATION_DIR}/**"],
+                max_workers=2,
                 resume_download=True,
             )
         )
@@ -131,7 +131,7 @@ def main() -> None:
                     audio_path = _get_audio_path(dataset_dir, item)
                 audio = librosa.load(str(audio_path), sr=None)[0]
 
-                choices = f"A. {item['choice_a']}\nB. {item['choice_b']}\nC. {item['choice_c']}\nD. {item['choice_d']}"
+                choices = f"A. {item['choice_a']}\nB. {item['choice_b']}\nC. {item.get('choice_c', '')}\nD. {item.get('choice_d', '')}"
                 prompt = f"{PROMPT_INSTRUCTION}\n{item['question']}\n{choices}"
 
                 prompts.append(prompt)
@@ -167,8 +167,8 @@ def main() -> None:
                     "question": item["question"],
                     "choice_a": item["choice_a"],
                     "choice_b": item["choice_b"],
-                    "choice_c": item["choice_c"],
-                    "choice_d": item["choice_d"],
+                    "choice_c": item.get("choice_c"),
+                    "choice_d": item.get("choice_d"),
                     "answer_gt": item["answer_gt"],
                     "task_name": item["task_name"],
                     "dataset_name": item["dataset_name"],
