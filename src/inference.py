@@ -23,18 +23,20 @@ def load_data() -> tuple[pd.DataFrame, str]:
 
 
 def make_prompt(category: str, question: str, choices: list[str]) -> str:
-    mcq_prompt = "Answer the following multiple choice question. The last line of your response should be in the following format: `Answer: <OPTION> where <OPTION> is copied verbatim from the options.`\n\n"
-    open_prompt = "Answer the following question.\n\n"
+    mcq_prompt = (
+        "Choose the most suitable answer from options to respond the question in next line, "
+        "you may only choose one of the options.\n"
+    )
+    open_prompt = "Answer the following question.\n"
     prompt = [
         mcq_prompt
         if category.lower() != "open" and category.lower() != "instruction following"
         else open_prompt
     ]
-    prompt.append("Question: " + question + "\n")
+    prompt.append(question + "\n")
     if category.lower() != "open" and category.lower() != "instruction following":
-        prompt.append("Options:\n")
         choices_list = [
-            f"({chr(ord('A') + i)}) {choice}" for i, choice in enumerate(choices)
+            f"{chr(ord('A') + i)}. {choice}" for i, choice in enumerate(choices)
         ]
         prompt.append("\n".join(choices_list))
     return "".join(prompt)
@@ -46,7 +48,12 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default="gemma3n",
-        choices=["gemma3n", "qwen3-omni", "qwen2.5-omni"],
+        choices=[
+            "gemma3n",
+            "qwen3-omni-thinking",
+            "qwen3-omni-instruction",
+            "qwen2.5-omni",
+        ],
         help="Model to use for inference",
     )
     parser.add_argument(
@@ -68,8 +75,10 @@ if __name__ == "__main__":
     df, data_dir = load_data()
     if model_name == "gemma3n":
         model = Gemma3n_VLLM()
-    elif model_name == "qwen3-omni":
-        model = Qwen3Omni_VLLM()
+    elif model_name == "qwen3-omni-thinking":
+        model = Qwen3Omni_VLLM(model_name="Qwen/Qwen3-Omni-30B-A3B-Thinking")
+    elif model_name == "qwen3-omni-instruction":
+        model = Qwen3Omni_VLLM(model_name="Qwen/Qwen3-Omni-30B-A3B-Instruct")
     elif model_name == "qwen2.5-omni":
         model = Qwen2_5Omni_VLLM()
     else:

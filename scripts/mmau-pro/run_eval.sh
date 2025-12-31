@@ -28,7 +28,8 @@ run_cmd() {
 
 run_cmd "Eval Gemma3n audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/gemma3n_predictions_audio.parquet --model_output_column model_response"
 run_cmd "Eval Qwen2.5-Omni audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/qwen25-omni_predictions_audio.parquet --model_output_column model_response"
-run_cmd "Eval Qwen3-Omni audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/qwen3-omni_predictions_audio.parquet --model_output_column model_response"
+run_cmd "Eval Qwen3-Omni-Thinking audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/qwen3-omni-thinking_predictions_audio.parquet --model_output_column model_response"
+run_cmd "Eval Qwen3-Omni-Instruct audio" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/evaluation.py results/mmau-pro/qwen3-omni-instruction_predictions_audio.parquet --model_output_column model_response"
 
 echo
 echo "Log saved to: $LOG_FILE"

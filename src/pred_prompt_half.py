@@ -41,7 +41,12 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default="gemma3n",
-        choices=["gemma3n", "qwen3-omni", "qwen2.5-omni"],
+        choices=[
+            "gemma3n",
+            "qwen3-omni-thinking",
+            "qwen3-omni-instruction",
+            "qwen2.5-omni",
+        ],
         help="Model to use for inference",
     )
     parser.add_argument(
@@ -62,8 +67,10 @@ if __name__ == "__main__":
     df, data_dir = load_data()
     if model_name == "gemma3n":
         model = Gemma3n_VLLM()
-    elif model_name == "qwen3-omni":
-        model = Qwen3Omni_VLLM()
+    elif model_name == "qwen3-omni-thinking":
+        model = Qwen3Omni_VLLM(model_name="Qwen/Qwen3-Omni-30B-A3B-Thinking")
+    elif model_name == "qwen3-omni-instruction":
+        model = Qwen3Omni_VLLM(model_name="Qwen/Qwen3-Omni-30B-A3B-Instruct")
     elif model_name == "qwen2.5-omni":
         model = Qwen2_5Omni_VLLM()
     else:

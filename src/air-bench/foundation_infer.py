@@ -27,7 +27,12 @@ PROMPT_INSTRUCTION = (
 
 MODEL_CLASSES = {
     "gemma3n": Gemma3n_VLLM,
-    "qwen3-omni": Qwen3Omni_VLLM,
+    "qwen3-omni-thinking": lambda: Qwen3Omni_VLLM(
+        model_name="Qwen/Qwen3-Omni-30B-A3B-Thinking"
+    ),
+    "qwen3-omni-instruction": lambda: Qwen3Omni_VLLM(
+        model_name="Qwen/Qwen3-Omni-30B-A3B-Instruct"
+    ),
     "qwen2.5-omni": Qwen2_5Omni_VLLM,
 }
 
@@ -55,7 +60,12 @@ def main() -> None:
         "--model",
         type=str,
         default="gemma3n",
-        choices=["gemma3n", "qwen3-omni", "qwen2.5-omni"],
+        choices=[
+            "gemma3n",
+            "qwen3-omni-thinking",
+            "qwen3-omni-instruction",
+            "qwen2.5-omni",
+        ],
     )
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--noise-path", type=str, default="")

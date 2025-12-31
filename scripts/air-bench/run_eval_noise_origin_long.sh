@@ -28,7 +28,8 @@ run_cmd() {
 
 run_cmd "Eval Gemma3n noise" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/air-bench/foundation_scoring.py --input results/air-bench/gemma3n_predictions_foundation_assets-white-noise-358382-1m.jsonl"
 run_cmd "Eval Qwen2.5-Omni noise" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/air-bench/foundation_scoring.py --input results/air-bench/qwen25-omni_predictions_foundation_assets-white-noise-358382-1m.jsonl"
-run_cmd "Eval Qwen3-Omni noise" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/air-bench/foundation_scoring.py --input results/air-bench/qwen3-omni_predictions_foundation_assets-white-noise-358382-1m.jsonl"
+run_cmd "Eval Qwen3-Omni-Thinking noise" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/air-bench/foundation_scoring.py --input results/air-bench/qwen3-omni-thinking_predictions_foundation_assets-white-noise-358382-1m.jsonl"
+run_cmd "Eval Qwen3-Omni-Instruct noise" bash -c "CUDA_VISIBLE_DEVICES=$1 .venv-eval/bin/python src/air-bench/foundation_scoring.py --input results/air-bench/qwen3-omni-instruction_predictions_foundation_assets-white-noise-358382-1m.jsonl"
 
 echo
 echo "Log saved to: $LOG_FILE"

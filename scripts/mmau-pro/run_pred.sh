@@ -27,10 +27,12 @@ run_cmd() {
 }
 
 run_cmd "Pred prompt half (Qwen2.5)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_half.py --model qwen2.5-omni --batch-size 100"
-run_cmd "Pred prompt half (Qwen3)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_half.py --model qwen3-omni --batch-size 100"
+run_cmd "Pred prompt half (Qwen3-Thinking)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_half.py --model qwen3-omni-thinking --batch-size 100"
+run_cmd "Pred prompt half (Qwen3-Instruct)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_half.py --model qwen3-omni-instruction --batch-size 100"
 run_cmd "Pred prompt half (Gemma3n)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_half.py --model gemma3n --batch-size 1"
 run_cmd "Pred prompt incorrect (Qwen2.5)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_incorrect.py --model qwen2.5-omni --batch-size 100"
-run_cmd "Pred prompt incorrect (Qwen3)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_incorrect.py --model qwen3-omni --batch-size 100"
+run_cmd "Pred prompt incorrect (Qwen3-Thinking)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_incorrect.py --model qwen3-omni-thinking --batch-size 100"
+run_cmd "Pred prompt incorrect (Qwen3-Instruct)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_incorrect.py --model qwen3-omni-instruction --batch-size 100"
 run_cmd "Pred prompt incorrect (Gemma3n)" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/pred_prompt_incorrect.py --model gemma3n --batch-size 1"
 
 echo

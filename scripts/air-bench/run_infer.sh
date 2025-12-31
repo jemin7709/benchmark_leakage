@@ -27,7 +27,8 @@ run_cmd() {
 }
 
 run_cmd "Qwen2.5-Omni with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen2.5-omni --batch-size 100"
-run_cmd "Qwen3-Omni with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni --batch-size 100"
+run_cmd "Qwen3-Omni-Thinking with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni-thinking --batch-size 100"
+run_cmd "Qwen3-Omni-Instruct with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni-instruction --batch-size 100"
 run_cmd "Gemma3n with audio" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model gemma3n --batch-size 1"
 
 echo
