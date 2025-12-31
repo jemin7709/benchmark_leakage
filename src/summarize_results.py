@@ -1,15 +1,16 @@
+import argparse
+import glob
 import json
 import os
-import glob
+
 import pandas as pd
-import argparse
 
 
 def format_percentage(val):
     if val is None:
         return "-"
     try:
-        return f"{float(val) * 100:.2f}%"
+        return f"{float(val) * 100:.2f}"
     except (ValueError, TypeError):
         return "-"
 
