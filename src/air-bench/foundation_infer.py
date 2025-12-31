@@ -61,7 +61,7 @@ def main() -> None:
     parser.add_argument("--noise-path", type=str, default="")
     parser.add_argument("--output", type=str, default="")
     parser.add_argument("--limit", type=int, default=0)
-    parser.add_argument("--max-per-task", type=int, default=2000)
+    parser.add_argument("--max-per-task", type=int, default=3000)
     args = parser.parse_args()
 
     set_seed(0)
@@ -154,7 +154,7 @@ def main() -> None:
                     audio_path = Path(noise_path)
                 else:
                     audio_path = _get_audio_path(dataset_dir, item)
-                audio = librosa.load(str(audio_path), sr=None)[0]
+                audio = librosa.load(str(audio_path), sr=16000)[0]
 
                 choices = f"A. {item['choice_a']}\nB. {item['choice_b']}\nC. {item.get('choice_c', '')}\nD. {item.get('choice_d', '')}"
                 prompt = f"{PROMPT_INSTRUCTION}\n{item['question']}\n{choices}"

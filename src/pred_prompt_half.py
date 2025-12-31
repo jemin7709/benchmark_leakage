@@ -5,7 +5,7 @@ import warnings
 
 import librosa
 import pandas as pd
-from sacrebleu.metrics import BLEU
+from sacrebleu.metrics.bleu import BLEU
 from transformers import set_seed
 
 from model.gemma3n import Gemma3n_VLLM
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                 audio_path = os.path.join(data_dir, row["audio_path"][0])
             else:
                 audio_path = os.path.join("./assets", "white-noise.mp3")
-            audios.append(librosa.load(audio_path, sr=None)[0])
+            audios.append(librosa.load(audio_path, sr=16000)[0])
 
         # 3. 배치 추론 실행
         print(f"Processing batch: {i // batch_size + 1} (size: {len(prompts)})")
