@@ -25,7 +25,7 @@ def load_data() -> tuple[pd.DataFrame, str]:
 def make_prompt(category: str, question: str, choices: list[str]) -> str:
     mcq_prompt = (
         "Choose the most suitable answer from options to respond the question in next line, "
-        "you may only choose one of the options.\n"
+        "you may only choose one of the options. (e.g., 'A. answer', 'B. answer', 'C. answer', ...)\n"
     )
     open_prompt = "Answer the following question.\n"
     prompt = [
