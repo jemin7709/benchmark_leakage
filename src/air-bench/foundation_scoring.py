@@ -90,10 +90,15 @@ def main() -> None:
         output_path = input_path.with_name(f"{output_stem}.json")
 
     fail_num = 0
+    fail_response_parse_total = 0
     task_id_list: list[str] = []
     total_num_dict: dict[str, int] = defaultdict(int)
+    total_all_num_dict: dict[str, int] = defaultdict(int)
+    parse_fail_num_dict: dict[str, int] = defaultdict(int)
     correct_num_dict: dict[str, int] = defaultdict(int)
     category_total: dict[str, int] = defaultdict(int)
+    category_total_all: dict[str, int] = defaultdict(int)
+    category_parse_fail: dict[str, int] = defaultdict(int)
     category_correct: dict[str, int] = defaultdict(int)
 
     with input_path.open("r", encoding="utf-8") as fp:
@@ -115,13 +120,19 @@ def main() -> None:
             if task_id not in task_id_list:
                 task_id_list.append(task_id)
 
+            total_all_num_dict[task_id] += 1
+            category_total_all[task_name] += 1
+
             response = record.get("response")
             pred = _parse_prediction_letter(response)
             if pred is None:
                 print(
                     f"[{line_no}] response parse failed: task_id={task_id} uniq_id={record.get('uniq_id')} response={repr(response)[:100]}"
                 )
+                fail_response_parse_total += 1
                 fail_num += 1
+                parse_fail_num_dict[task_id] += 1
+                category_parse_fail[task_name] += 1
                 continue
 
             gt = _ground_truth_letter(record)
@@ -134,14 +145,21 @@ def main() -> None:
                 category_correct[task_name] += 1
 
     total_sum = 0
+    total_sum_all = 0
     total_correct = 0
     for task_id in task_id_list:
         total_num = total_num_dict[task_id]
+        total_all_num = total_all_num_dict[task_id]
+        parse_fail_num = parse_fail_num_dict[task_id]
         correct_num = correct_num_dict[task_id]
         acc = correct_num / total_num if total_num else 0.0
+        acc_all = correct_num / total_all_num if total_all_num else 0.0
         total_sum += total_num
+        total_sum_all += total_all_num
         total_correct += correct_num
-        print(f"{task_id}: Sum={total_num}, correct={correct_num}, acc={acc}")
+        print(
+            f"{task_id}: Sum={total_num}, correct={correct_num}, acc={acc}, acc_all={acc_all}, parse_fail={parse_fail_num}"
+        )
 
     category_scores: dict[str, dict[str, float | int | str]] = {}
     category_accs: list[float] = []
@@ -150,28 +168,38 @@ def main() -> None:
     label_width = max(len(label) for _, label in CATEGORY_LABELS)
     for task_name, label in CATEGORY_LABELS:
         total_num = category_total.get(task_name, 0)
+        total_all_num = category_total_all.get(task_name, 0)
+        parse_fail_num = category_parse_fail.get(task_name, 0)
         correct_num = category_correct.get(task_name, 0)
         acc = correct_num / total_num if total_num else 0.0
+        acc_all = correct_num / total_all_num if total_all_num else 0.0
         category_scores[label] = {
             "task_name": task_name,
             "total": total_num,
+            "total_all": total_all_num,
+            "parse_fail": parse_fail_num,
             "correct": correct_num,
             "acc": acc,
+            "acc_all": acc_all,
         }
         if total_num:
             category_accs.append(acc)
         print(
-            f"{label:<{label_width}} | Sum={total_num:5d} | correct={correct_num:5d} | acc={acc:7.2%}"
+            f"{label:<{label_width}} | Sum={total_num:5d} | correct={correct_num:5d} | acc={acc:7.2%} | acc_all={acc_all:7.2%} | parse_fail={parse_fail_num:5d}"
         )
 
     category_average = (
         (sum(category_accs) / len(category_accs)) * 100.0 if category_accs else 0.0
     )
 
+    overall_acc_all = (total_correct / total_sum_all) if total_sum_all else 0.0
+
     print("-" * 100)
     print(f"Total sum: {total_sum}")
     print(f"Total correct: {total_correct}")
     print(f"fail_num: {fail_num}")
+    print(f"fail_response_parse: {fail_response_parse_total}")
+    print(f"acc_all(overall): {overall_acc_all:.4f}")
     print(f"category_average: {category_average:.2f}%")
 
     summary = {
@@ -179,9 +207,14 @@ def main() -> None:
         "tasks": {
             task_id: {
                 "total": total_num_dict[task_id],
+                "total_all": total_all_num_dict[task_id],
+                "parse_fail": parse_fail_num_dict[task_id],
                 "correct": correct_num_dict[task_id],
                 "acc": correct_num_dict[task_id] / total_num_dict[task_id]
                 if total_num_dict[task_id]
+                else 0.0,
+                "acc_all": correct_num_dict[task_id] / total_all_num_dict[task_id]
+                if total_all_num_dict[task_id]
                 else 0.0,
             }
             for task_id in task_id_list
@@ -189,8 +222,11 @@ def main() -> None:
         "categories": category_scores,
         "category_average": category_average,
         "total_sum": total_sum,
+        "total_sum_all": total_sum_all,
         "total_correct": total_correct,
         "fail_num": fail_num,
+        "fail_response_parse": fail_response_parse_total,
+        "acc_all": overall_acc_all,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as fp:
