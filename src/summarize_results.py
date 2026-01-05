@@ -60,6 +60,11 @@ def main():
         nargs="*",
         help="JSON files to summarize. If empty, searches results/mmau-pro/",
     )
+    parser.add_argument(
+        "--csv",
+        action="store_true",
+        help="Output as CSV format",
+    )
 
     args = parser.parse_args()
 
@@ -107,10 +112,12 @@ def main():
 
     df = df[cols]
 
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.width", 2000)
-
-    print(df.to_string(index=False))
+    if args.csv:
+        print(df.to_csv(index=False))
+    else:
+        pd.set_option("display.max_columns", None)
+        pd.set_option("display.width", 2000)
+        print(df.to_string(index=False))
 
 
 if __name__ == "__main__":
