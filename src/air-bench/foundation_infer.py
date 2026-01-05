@@ -11,7 +11,7 @@ import numpy as np
 from huggingface_hub import snapshot_download
 from transformers import set_seed
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from model.gemma3n import Gemma3n_VLLM  # noqa: E402
 from model.qwen2_audio import Qwen2Audio_HF  # noqa: E402

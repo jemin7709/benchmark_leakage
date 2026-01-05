@@ -1,11 +1,15 @@
 import argparse
 import glob
 import os
+import sys
 import warnings
+from pathlib import Path
 
 import librosa
 import pandas as pd
 from transformers import set_seed
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from model.gemma3n import Gemma3n_VLLM
 from model.qwen3_omni import Qwen3Omni_VLLM
