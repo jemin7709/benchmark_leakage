@@ -26,10 +26,10 @@ run_cmd() {
     trap - EXIT INT TERM
 }
 
-run_cmd "Qwen2.5-Omni with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen2.5-omni --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100"
-run_cmd "Qwen3-Omni-Thinking with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni-thinking --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100"
-run_cmd "Qwen3-Omni-Instruct with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni-instruction --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100"
-run_cmd "Gemma3n with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model gemma3n --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100"
+run_cmd "Qwen2.5-Omni with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen2.5-omni --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100 --max-per-task 1000"
+run_cmd "Qwen3-Omni-Thinking with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni-thinking --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100 --max-per-task 1000"
+run_cmd "Qwen3-Omni-Instruct with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model qwen3-omni-instruction --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100 --max-per-task 1000"
+run_cmd "Gemma3n with noise origin 1m" bash -c "CUDA_VISIBLE_DEVICES=$1 uv run src/air-bench/foundation_infer.py --model gemma3n --noise-path ./assets/white-noise-358382-1m.mp3 --batch-size 100 --max-per-task 1000"
 
 echo
 echo "Log saved to: $LOG_FILE"
