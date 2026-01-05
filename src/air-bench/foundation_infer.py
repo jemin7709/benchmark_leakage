@@ -14,6 +14,7 @@ from transformers import set_seed
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from model.gemma3n import Gemma3n_VLLM  # noqa: E402
+from model.qwen2_audio import Qwen2Audio_HF  # noqa: E402
 from model.qwen3_omni import Qwen3Omni_VLLM  # noqa: E402
 from model.qwen25_omni import Qwen2_5Omni_VLLM  # noqa: E402
 
@@ -34,6 +35,7 @@ MODEL_CLASSES = {
         model_name="Qwen/Qwen3-Omni-30B-A3B-Instruct"
     ),
     "qwen2.5-omni": Qwen2_5Omni_VLLM,
+    "qwen2-audio": Qwen2Audio_HF,
 }
 
 
@@ -65,6 +67,7 @@ def main() -> None:
             "qwen3-omni-thinking",
             "qwen3-omni-instruction",
             "qwen2.5-omni",
+            "qwen2-audio",
         ],
     )
     parser.add_argument("--batch-size", type=int, default=1)
