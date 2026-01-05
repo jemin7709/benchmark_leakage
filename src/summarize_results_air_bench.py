@@ -59,13 +59,24 @@ def get_row_data(file_path):
         score = None
         if task_name in task_name_to_data:
             score = task_name_to_data[task_name].get("acc_all")
+            if score is None:
+                score = task_name_to_data[task_name].get("acc_mean")
         row[task_name] = format_percentage(score)
 
     avg_score = data.get("category_average")
+    if avg_score is None:
+        avg_score = data.get("category_average_mean")
+
     if avg_score is not None:
         row["Average"] = f"{float(avg_score):.2f}"
     else:
         row["Average"] = "-"
+
+    std = data.get("category_average_std")
+    if std is not None:
+        row["Std"] = f"{float(std):.2f}"
+    else:
+        row["Std"] = "-"
 
     return row
 
@@ -128,6 +139,7 @@ def main():
         "Music_AQA",
         "Music_Mood_Recognition",
         "Average",
+        "Std",
     ]
 
     cols = ["Model"] + categories_to_extract

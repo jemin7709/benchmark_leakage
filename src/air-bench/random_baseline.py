@@ -5,6 +5,7 @@ import random
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -60,6 +61,7 @@ def aggregate_evaluations(
     *,
     n_runs: int,
     seed: int,
+    save_all_runs: bool,
 ) -> dict:
     if not run_evaluations:
         raise ValueError("run_evaluations is empty")
@@ -143,13 +145,12 @@ def aggregate_evaluations(
     total_acc_mean, total_acc_std = _mean_std(total_accs)
     category_avg_mean, category_avg_std = _mean_std(category_avgs)
 
-    return {
-        "inputs": run_prediction_paths,
-        "run_evaluations": run_evaluation_paths,
+    payload = {
         "n_runs": int(n_runs),
         "seed": int(seed),
         "tasks": tasks_agg,
         "categories": categories_agg,
+        "category_average": category_avg_mean,
         "category_average_mean": category_avg_mean,
         "category_average_std": category_avg_std,
         "total_sum": int(total_sum),
@@ -159,6 +160,12 @@ def aggregate_evaluations(
         "total_acc_std": total_acc_std,
         "fail_num": int(totals_reference["fail_num"] or 0),
     }
+
+    if save_all_runs:
+        payload["inputs"] = run_prediction_paths
+        payload["run_evaluations"] = run_evaluation_paths
+
+    return payload
 
 
 def _load_foundation_meta(*, limit: int, max_per_task: int, seed: int) -> list[dict]:
@@ -249,6 +256,11 @@ def main() -> None:
         action="store_true",
         help="Generate predictions only (no per-run evaluation or aggregate).",
     )
+    parser.add_argument(
+        "--save-all-runs",
+        action="store_true",
+        help="Save per-run evaluation paths in aggregate output (default: avg/std only).",
+    )
     args = parser.parse_args()
 
     if args.num_runs <= 0:
@@ -263,22 +275,24 @@ def main() -> None:
         candidate = Path(".venv-eval/bin/python")
         scoring_python = str(candidate) if candidate.exists() else sys.executable
 
-    print("=" * 100)
-    print("AIR-Bench random baseline")
-    print(f"CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}")
-    print(f"Runs: {args.num_runs}")
-    print(f"Seed: {args.seed}")
-    print(f"Suffix: {suffix}")
-    print(f"Output dir: {output_dir}")
-    print(f"Scoring python: {scoring_python}")
-    print("=" * 100)
+    if args.save_all_runs:
+        print("=" * 100)
+        print("AIR-Bench random baseline")
+        print(f"CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}")
+        print(f"Runs: {args.num_runs}")
+        print(f"Seed: {args.seed}")
+        print(f"Suffix: {suffix}")
+        print(f"Output dir: {output_dir}")
+        print(f"Scoring python: {scoring_python}")
+        print("=" * 100)
 
     meta = _load_foundation_meta(
         limit=args.limit, max_per_task=args.max_per_task, seed=args.seed
     )
-    print(
-        f"Loaded {len(meta)} items from {HF_DATASET_REPO} ({HF_FOUNDATION_META} only)"
-    )
+    if args.save_all_runs:
+        print(
+            f"Loaded {len(meta)} items from {HF_DATASET_REPO} ({HF_FOUNDATION_META} only)"
+        )
 
     run_prediction_paths: list[str] = []
     run_evaluation_paths: list[str] = []
@@ -286,28 +300,78 @@ def main() -> None:
 
     for run_idx in range(args.num_runs):
         run_model = f"{base_model}_run{run_idx:03d}"
-        pred_path = output_dir / f"{run_model}_predictions_foundation_{suffix}.jsonl"
-
         rng = random.Random(args.seed + run_idx)
         t0 = time.time()
-        _write_predictions(meta, pred_path, rng)
-        dt = time.time() - t0
-        print(
-            f"[{run_idx + 1:03d}/{args.num_runs:03d}] wrote predictions: {pred_path} ({dt:.2f}s)"
-        )
 
-        run_prediction_paths.append(str(pred_path))
+        if args.save_all_runs:
+            pred_path = (
+                output_dir / f"{run_model}_predictions_foundation_{suffix}.jsonl"
+            )
+            _write_predictions(meta, pred_path, rng)
+            dt = time.time() - t0
+            print(
+                f"[{run_idx + 1:03d}/{args.num_runs:03d}] wrote predictions: {pred_path} ({dt:.2f}s)"
+            )
+            run_prediction_paths.append(str(pred_path))
+        else:
+            pred_path = None
 
         if args.skip_scoring:
             continue
 
-        eval_path = _default_eval_path_from_pred_path(pred_path)
-        _run_scoring(pred_path, eval_path, python_exe=scoring_python)
-        print(f"[{run_idx + 1:03d}/{args.num_runs:03d}] wrote evaluation:  {eval_path}")
+        if args.save_all_runs:
+            assert pred_path is not None
+            eval_path = _default_eval_path_from_pred_path(pred_path)
+            _run_scoring(pred_path, eval_path, python_exe=scoring_python)
+            print(
+                f"[{run_idx + 1:03d}/{args.num_runs:03d}] wrote evaluation:  {eval_path}"
+            )
+            run_evaluation_paths.append(str(eval_path))
+            with eval_path.open("r", encoding="utf-8") as f:
+                run_evaluations.append(json.load(f))
+        else:
+            pred_records = []
+            for item in meta:
+                letters = _available_choice_letters(item)
+                response = rng.choice(letters)
+                record = {
+                    "path": item.get("path"),
+                    "question": item.get("question"),
+                    "choice_a": item.get("choice_a"),
+                    "choice_b": item.get("choice_b"),
+                    "choice_c": item.get("choice_c"),
+                    "choice_d": item.get("choice_d"),
+                    "answer_gt": item.get("answer_gt"),
+                    "task_name": item.get("task_name"),
+                    "dataset_name": item.get("dataset_name"),
+                    "response": response,
+                    "uniq_id": item.get("uniq_id"),
+                }
+                pred_records.append(json.dumps(record, ensure_ascii=False))
+            dt = time.time() - t0
+            if args.num_runs <= 5 or run_idx == 0:
+                print(
+                    f"[{run_idx + 1:03d}/{args.num_runs:03d}] generated predictions (in memory) ({dt:.2f}s)"
+                )
 
-        run_evaluation_paths.append(str(eval_path))
-        with eval_path.open("r", encoding="utf-8") as f:
-            run_evaluations.append(json.load(f))
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", suffix=".jsonl", delete=False
+            ) as tmp_pred_file:
+                tmp_pred_path = Path(tmp_pred_file.name)
+                for record in pred_records:
+                    tmp_pred_file.write(record + "\n")
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", suffix=".json", delete=False
+            ) as tmp_eval_file:
+                tmp_eval_path = Path(tmp_eval_file.name)
+
+            _run_scoring(tmp_pred_path, tmp_eval_path, python_exe=scoring_python)
+            with tmp_eval_path.open("r", encoding="utf-8") as f:
+                run_evaluations.append(json.load(f))
+
+            tmp_pred_path.unlink(missing_ok=True)
+            tmp_eval_path.unlink(missing_ok=True)
 
     if args.skip_scoring:
         print("Done (predictions only).")
@@ -319,6 +383,7 @@ def main() -> None:
         run_evaluation_paths,
         n_runs=args.num_runs,
         seed=args.seed,
+        save_all_runs=args.save_all_runs,
     )
 
     aggregate_path = output_dir / f"{base_model}_evaluation_foundation_{suffix}.json"
@@ -326,6 +391,10 @@ def main() -> None:
     with aggregate_path.open("w", encoding="utf-8") as f:
         json.dump(aggregate, f, indent=2, sort_keys=True)
         f.write("\n")
+
+    if not args.save_all_runs:
+        for p in run_prediction_paths + run_evaluation_paths:
+            Path(p).unlink(missing_ok=True)
 
     print("=" * 100)
     print(f"Done. Wrote aggregate: {aggregate_path}")
