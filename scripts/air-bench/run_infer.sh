@@ -1,7 +1,7 @@
 #!/bin/bash
 set -o pipefail
 
-LOG_FILE="logs/execution_infer_air-bench_task.log"
+LOG_FILE="logs/execution_infer_air-bench.log"
 > "$LOG_FILE"  # Clear log file
 
 run_cmd() {
