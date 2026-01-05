@@ -14,8 +14,9 @@ Focus: audio→text multimodal models + “noise substitution” leakage checks.
 ```
 benchmark_leakage/
 ├── src/                 # Python entrypoints + model wrappers
-│   ├── inference.py     # MMAU-Pro inference → parquet in ./results/
-│   ├── evaluation.py    # MMAU-Pro eval (LLM judge + NVEmbed + AIF)
+│   ├── mmau-pro/        # MMAU-Pro inference + evaluation
+│   │   ├── inference.py # MMAU-Pro inference → parquet in ./results/
+│   │   └── evaluation.py# MMAU-Pro eval (LLM judge + NVEmbed + AIF)
 │   ├── model/           # Gemma/Qwen wrappers (HF + vLLM)
 │   └── air-bench/       # AIR-Bench 2024 inference+scoring
 ├── scripts/             # Repro scripts with logging + CUDA_VISIBLE_DEVICES
@@ -28,8 +29,8 @@ benchmark_leakage/
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Run MMAU-Pro inference (audio/noise) | `scripts/run_infer*.sh`, `src/inference.py` | `--noise-path` swaps all audio to one file |
-| Run MMAU-Pro evaluation | `scripts/run_eval*.sh`, `src/evaluation.py` | Uses `.venv-eval/bin/python` |
+| Run MMAU-Pro inference (audio/noise) | `scripts/run_infer*.sh`, `src/mmau-pro/inference.py` | `--noise-path` swaps all audio to one file |
+| Run MMAU-Pro evaluation | `scripts/run_eval*.sh`, `src/mmau-pro/evaluation.py` | Uses `.venv-eval/bin/python` |
 | Change model backends | `src/model/*.py` | HF + vLLM wrappers per model |
 
 ## CONVENTIONS
