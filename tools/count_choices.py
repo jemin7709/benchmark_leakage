@@ -5,6 +5,8 @@ A., B. 패턴이 없는 응답은 etc로 집계됩니다.
 """
 
 import argparse
+import glob
+import os
 import re
 from collections import Counter
 from pathlib import Path
@@ -15,13 +17,6 @@ import pandas as pd
 
 
 def load_parquet(parquet_path: str, category: str) -> pd.DataFrame:
-    if not parquet_path.endswith(".parquet"):
-        raise ValueError(f"Expected .parquet file, got: {parquet_path}")
-
-    path = Path(parquet_path)
-    if not path.is_file():
-        raise FileNotFoundError(f"File not found: {parquet_path}")
-
     df = pd.read_parquet(parquet_path)
     return cast(pd.DataFrame, df[df["category"] == category].reset_index(drop=True))
 
@@ -165,13 +160,37 @@ def output_csv(title: str, counter: Counter[str], total: int, output_path: str) 
     print(f"CSV saved to: {output_path}")
 
 
+def process_single_file(
+    parquet_path: str, category: str, response_col: str, show_etc_details: bool
+) -> None:
+    df = load_parquet(parquet_path, category)
+    total = len(df)
+
+    if total == 0:
+        print(f"No data found for category '{category}' in {parquet_path}")
+        return
+
+    model_counter = count_model_responses(df, response_col)
+    gt_counter = count_ground_truth(df)
+
+    file_name = os.path.basename(parquet_path)
+    output_cli(f"Model Response - {category} ({file_name})", model_counter, total)
+    print()
+    output_cli(f"Ground Truth - {category} ({file_name})", gt_counter, total)
+
+    if show_etc_details:
+        print()
+        print(f"=== ETC Details - {file_name} ===")
+        output_etc_details(df)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="model_response와 실제 정답(answer)의 선택지 분포를 함께 출력합니다."
     )
     parser.add_argument(
-        "parquet_file",
-        help="parquet 파일 경로 (예: results/qwen.parquet)",
+        "path",
+        help="parquet 파일 경로 또는 폴더 경로",
     )
     parser.add_argument(
         "--category", required=True, help="필터링할 카테고리 (예: sound, speech, music)"
@@ -180,41 +199,40 @@ def main():
         "--response-col", default="model_response", help="model_response 컬럼명"
     )
     parser.add_argument(
-        "--output-mode",
-        choices=["cli", "csv"],
-        default="cli",
-        help="출력 모드: cli (기본) 또는 csv",
-    )
-    parser.add_argument(
-        "--output-path", default="./choice_counts.csv", help="CSV 출력 경로"
+        "--no-etc-details",
+        action="store_true",
+        help="ETC 상세 정보 출력 안 함",
     )
     args = parser.parse_args()
 
     try:
-        parquet_path = str(Path(args.parquet_file).expanduser())
-        df = load_parquet(parquet_path, args.category)
-        total = len(df)
+        path = Path(args.path).expanduser()
+        show_etc_details = not args.no_etc_details
 
-        model_counter = count_model_responses(df, args.response_col)
-        gt_counter = count_ground_truth(df)
+        if path.is_file():
+            if not str(path).endswith(".parquet"):
+                print(f"Error: Expected .parquet file, got: {path}")
+                return
+            process_single_file(
+                str(path), args.category, args.response_col, show_etc_details
+            )
 
-        if args.output_mode == "cli":
-            output_cli(f"Model Response - {args.category}", model_counter, total)
-            print()
-            output_cli(f"Ground Truth - {args.category}", gt_counter, total)
-            print()
-            print("=== ETC Details (정답이 choices에 없는 경우) ===")
-            output_etc_details(df)
+        elif path.is_dir():
+            parquet_files = glob.glob(os.path.join(str(path), "*.parquet"))
+            if not parquet_files:
+                print(f"No .parquet files found in directory: {path}")
+                return
+
+            parquet_files.sort()
+            for i, parquet_file in enumerate(parquet_files):
+                if i > 0:
+                    print("\n" + "=" * 80 + "\n")
+                process_single_file(
+                    parquet_file, args.category, args.response_col, show_etc_details
+                )
+
         else:
-            output_csv(
-                f"Model Response - {args.category}",
-                model_counter,
-                total,
-                args.output_path,
-            )
-            output_csv(
-                f"Ground Truth - {args.category}", gt_counter, total, args.output_path
-            )
+            print(f"Error: Path not found: {path}")
 
     except Exception as e:
         print(f"Error: {e}")
