@@ -97,6 +97,7 @@ class Gemma3n_VLLM:
             model=model_name,
             tensor_parallel_size=torch.cuda.device_count(),
             seed=0,
+            block_size=32,
         )
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.system_prompt = ""
