@@ -13,7 +13,37 @@ from pathlib import Path
 from typing import Any
 
 
-def _parse_prediction_letter(response: Any) -> str | None:
+def _find_matching_letter_exact(
+    response: str, choice_a: str, choice_b: str, choice_c: str, choice_d: str
+) -> str | None:
+    choices = [choice_a, choice_b, choice_c, choice_d]
+    letters = ["A", "B", "C", "D"]
+
+    resp_lower = response.lower().strip()
+    for choice, letter in zip(choices, letters):
+        if choice and isinstance(choice, str) and resp_lower == choice.lower().strip():
+            return letter
+    return None
+
+
+def _find_matching_letter_substring(
+    response: str, choice_a: str, choice_b: str, choice_c: str, choice_d: str
+) -> str | None:
+    choices = [choice_a, choice_b, choice_c, choice_d]
+    letters = ["A", "B", "C", "D"]
+
+    resp_lower = response.lower().strip()
+    for choice, letter in zip(choices, letters):
+        if choice and isinstance(choice, str):
+            choice_lower = choice.lower().strip()
+            if resp_lower in choice_lower or choice_lower in resp_lower:
+                return letter
+    return None
+
+
+def _parse_prediction_letter(
+    response: Any, choice_a: str, choice_b: str, choice_c: str, choice_d: str
+) -> str | None:
     if response is None:
         return None
 
@@ -24,7 +54,21 @@ def _parse_prediction_letter(response: Any) -> str | None:
     if not predict or predict == "None":
         return None
 
-    # foundation_scoring.py와 동일한 로직
+    resp_str = predict
+    cleaned_response = re.sub(r"^[A-Z]\.?\s*", "", resp_str)
+
+    exact_match = _find_matching_letter_exact(
+        cleaned_response, choice_a, choice_b, choice_c, choice_d
+    )
+    if exact_match:
+        return exact_match
+
+    substring_match = _find_matching_letter_substring(
+        cleaned_response, choice_a, choice_b, choice_c, choice_d
+    )
+    if substring_match:
+        return substring_match
+
     first = predict[0]
     if first in {"A", "B", "C", "D"}:
         return first
@@ -85,7 +129,13 @@ def count_choices(input_path: Path, task_filter: str | None = None) -> None:
 
         for record in task_records:
             response = record.get("response")
-            pred = _parse_prediction_letter(response)
+            choice_a = record.get("choice_a")
+            choice_b = record.get("choice_b")
+            choice_c = record.get("choice_c")
+            choice_d = record.get("choice_d")
+            pred = _parse_prediction_letter(
+                response, choice_a, choice_b, choice_c, choice_d
+            )
             if pred:
                 model_counter[pred] += 1
             else:

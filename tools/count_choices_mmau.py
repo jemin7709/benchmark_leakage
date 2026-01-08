@@ -68,11 +68,7 @@ def find_matching_index(answer: Any, choices: list[Any] | None) -> int:
     if not isinstance(answer, str):
         return -1
 
-    substring_match = find_matching_index_substring(answer, choices)
-    if substring_match != -1:
-        return substring_match
-
-    return find_matching_index_wordset(answer, choices)
+    return find_matching_index_substring(answer, choices)
 
 
 def index_to_letter(idx: int) -> str:
@@ -82,17 +78,28 @@ def index_to_letter(idx: int) -> str:
 def count_model_responses(df: pd.DataFrame, response_col: str) -> Counter[str]:
     counter: Counter[str] = Counter()
 
-    for response in df[response_col]:
-        if response is None or pd.isna(response):
+    for _, row in df.iterrows():
+        response = row.get(response_col)
+        choices = normalize_to_list(row.get("choices"))
+
+        if response is None or pd.isna(response) or choices is None:
             counter["etc"] += 1
             continue
 
-        matches = re.findall(r"[A-Z]\.", str(response))
-        if matches:
-            for m in matches:
-                counter[m[0]] += 1
+        resp_str = str(response).strip()
+        cleaned_response = re.sub(r"^[A-Z]\.?\s*", "", resp_str)
+
+        matched_idx = find_matching_index(cleaned_response, choices)
+        if matched_idx != -1:
+            counter[index_to_letter(matched_idx)] += 1
         else:
-            counter["etc"] += 1
+            matches = re.findall(r"[A-Z]\.", resp_str)
+            if matches:
+                unique_choices = set(m[0] for m in matches)
+                for m in unique_choices:
+                    counter[m] += 1
+            else:
+                counter["etc"] += 1
 
     return counter
 
