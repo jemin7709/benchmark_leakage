@@ -160,28 +160,22 @@ def output_csv(title: str, counter: Counter[str], total: int, output_path: str) 
     print(f"CSV saved to: {output_path}")
 
 
-def process_single_file(
-    parquet_path: str, category: str, response_col: str, show_etc_details: bool
+def process_single_category(
+    df: pd.DataFrame, category: str, response_col: str, show_etc_details: bool
 ) -> None:
-    df = load_parquet(parquet_path, category)
-    total = len(df)
+    cat_df = cast(pd.DataFrame, df[df["category"] == category].reset_index(drop=True))
+    total = len(cat_df)
 
     if total == 0:
-        print(f"No data found for category '{category}' in {parquet_path}")
         return
 
-    model_counter = count_model_responses(df, response_col)
-    gt_counter = count_ground_truth(df)
+    model_counter = count_model_responses(cat_df, response_col)
+    gt_counter = count_ground_truth(cat_df)
 
-    file_name = os.path.basename(parquet_path)
-    output_cli(f"Model Response - {category} ({file_name})", model_counter, total)
+    output_cli(f"Model Response - {category}", model_counter, total)
     print()
-    output_cli(f"Ground Truth - {category} ({file_name})", gt_counter, total)
-
-    if show_etc_details:
-        print()
-        print(f"=== ETC Details - {file_name} ===")
-        output_etc_details(df)
+    output_cli(f"Ground Truth - {category}", gt_counter, total)
+    print()
 
 
 def main():
@@ -193,7 +187,7 @@ def main():
         help="parquet 파일 경로 또는 폴더 경로",
     )
     parser.add_argument(
-        "--category", required=True, help="필터링할 카테고리 (예: sound, speech, music)"
+        "--category", help="필터링할 카테고리 (지정하지 않으면 모든 카테고리 수행)"
     )
     parser.add_argument(
         "--response-col", default="model_response", help="model_response 컬럼명"
@@ -213,9 +207,21 @@ def main():
             if not str(path).endswith(".parquet"):
                 print(f"Error: Expected .parquet file, got: {path}")
                 return
-            process_single_file(
-                str(path), args.category, args.response_col, show_etc_details
-            )
+
+            df = pd.read_parquet(str(path))
+            file_name = os.path.basename(str(path))
+            print(f"### File: {file_name} ###\n")
+
+            if args.category:
+                process_single_category(
+                    df, args.category, args.response_col, show_etc_details
+                )
+            else:
+                categories = sorted(df["category"].unique())
+                for cat in categories:
+                    process_single_category(
+                        df, cat, args.response_col, show_etc_details
+                    )
 
         elif path.is_dir():
             parquet_files = glob.glob(os.path.join(str(path), "*.parquet"))
@@ -227,9 +233,21 @@ def main():
             for i, parquet_file in enumerate(parquet_files):
                 if i > 0:
                     print("\n" + "=" * 80 + "\n")
-                process_single_file(
-                    parquet_file, args.category, args.response_col, show_etc_details
-                )
+
+                file_name = os.path.basename(parquet_file)
+                print(f"### File: {file_name} ###\n")
+                df = pd.read_parquet(parquet_file)
+
+                if args.category:
+                    process_single_category(
+                        df, args.category, args.response_col, show_etc_details
+                    )
+                else:
+                    categories = sorted(df["category"].unique())
+                    for cat in categories:
+                        process_single_category(
+                            df, cat, args.response_col, show_etc_details
+                        )
 
         else:
             print(f"Error: Path not found: {path}")

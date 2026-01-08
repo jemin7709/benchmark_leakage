@@ -55,23 +55,35 @@ def _ground_truth_letter(record: dict) -> str | None:
 
 
 def count_choices(input_path: Path, task_filter: str | None = None) -> None:
-    model_counter: Counter[str] = Counter()
-    gt_counter: Counter[str] = Counter()
-    total = 0
-
+    records = []
     with input_path.open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            record = json.loads(line)
+            records.append(json.loads(line))
 
-            task_name = record.get("task_name", "")
-            if task_filter and task_filter not in task_name:
-                continue
+    if not records:
+        print(f"No records found in {input_path.name}")
+        return
 
-            total += 1
+    print(f"### File: {input_path.name} ###\n")
 
+    if task_filter:
+        tasks = [task_filter]
+    else:
+        tasks = sorted(list(set(r.get("task_name", "unknown") for r in records)))
+
+    for task in tasks:
+        task_records = [r for r in records if r.get("task_name") == task]
+        if not task_records:
+            continue
+
+        model_counter: Counter[str] = Counter()
+        gt_counter: Counter[str] = Counter()
+        total = len(task_records)
+
+        for record in task_records:
             response = record.get("response")
             pred = _parse_prediction_letter(response)
             if pred:
@@ -85,20 +97,21 @@ def count_choices(input_path: Path, task_filter: str | None = None) -> None:
             else:
                 gt_counter["etc"] += 1
 
-    print(f"=== File: {input_path.name} ===")
-    if task_filter:
-        print(f"=== Filter: {task_filter} ===")
-    print(f"Total records: {total}")
-
-    def print_stat(title: str, counter: Counter[str]):
-        print(f"\n--- {title} ---")
-        for choice in sorted(counter.keys(), key=lambda x: (x == "etc", x)):
-            count = counter[choice]
+        print(f"=== Model Response - {task} ===")
+        print(f"Total responses: {total}")
+        for choice in sorted(model_counter.keys(), key=lambda x: (x == "etc", x)):
+            count = model_counter[choice]
             pct = (count / total * 100) if total > 0 else 0
             print(f"{choice}: {count} ({pct:.1f}%)")
+        print()
 
-    print_stat("Model Response Distribution", model_counter)
-    print_stat("Ground Truth Distribution", gt_counter)
+        print(f"=== Ground Truth - {task} ===")
+        print(f"Total responses: {total}")
+        for choice in sorted(gt_counter.keys(), key=lambda x: (x == "etc", x)):
+            count = gt_counter[choice]
+            pct = (count / total * 100) if total > 0 else 0
+            print(f"{choice}: {count} ({pct:.1f}%)")
+        print()
 
 
 def main():
