@@ -6,7 +6,6 @@ AIR-Bench jsonl 결과 파일에서 선택지(A, B, C, D) 빈도를 카운트합
 import argparse
 import glob
 import json
-import os
 import re
 from collections import Counter
 from pathlib import Path
